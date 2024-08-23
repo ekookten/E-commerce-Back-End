@@ -101,18 +101,22 @@ router.put("/:id", async (req, res) => {
 // DELETE a product by ID
 router.delete("/:id", async (req, res) => {
   try {
-    const productData = await Product.destroy({
-      where: {
-        id: req.params.id,
-      },
+    const productData = await Product.findByPk(req.params.id, {
+      include: [{ model: Tag, through: ProductTag }],
     });
+    //Todo: delete tags
 
     if (!productData) {
-      res.status(404).json({ message: "No product found with this id!" });
+      res.status(404).json({ message: "No products found with this id!" });
       return;
     }
+    const tags = productData.tags.map((tag) => {
+      return tag.id;
+    });
+    await ProductTag.destroy({ where: { id: tags } });
+    await productData.destroy();
 
-    res.status(200).json({ message: "Product deleted successfully" });
+    res.status(200).json(productData);
   } catch (err) {
     res.status(500).json(err);
   }
